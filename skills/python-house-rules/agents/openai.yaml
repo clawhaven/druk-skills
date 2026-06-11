@@ -1,0 +1,5 @@
+---
+interface:
+  display_name: Python House Rules
+  short_description: Applies standing Python, Django, DRF, and testing conventions
+  default_prompt: Use $python-house-rules to apply my standing Python rules on this task.

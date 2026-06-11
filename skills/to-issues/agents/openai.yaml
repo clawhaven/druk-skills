@@ -1,0 +1,5 @@
+---
+interface:
+  display_name: To Issues
+  short_description: Converts plans into vertical implementation tickets
+  default_prompt: Use $to-issues to split this plan into Linear-ready vertical slices.
