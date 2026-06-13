@@ -25,6 +25,10 @@ differs from plain PEP 8, follow the repo config.
   `request` not `req`, `manager` not `mgr`, `response` not `resp`. The full word
   costs nothing to read and removes guesswork. Established domain acronyms
   (`url`, `id`, `http`, `db`) and conventional loop indices are fine.
+- Name things by what they mean in the domain, not the mechanism behind them.
+  `runs_in_sandbox`, not `uses_ec2`; `cache`, not `redis_dict`. Implementation
+  details in names go stale and leak the abstraction the moment the mechanism
+  changes.
 - Use leading underscores for internal helpers and implementation details.
 - Do not fight the formatter. If Black, Ruff, isort, or another repo tool would
   rewrite the code, write it in the shape the tool expects.
@@ -79,6 +83,7 @@ def ScheduleArchiveRun(runId: str, force=False):
 - Prefer bare `return` for guard exits and let void functions fall off the end.
 - Never write `return None` when `return` or falling off means the same thing.
 - Compare `None` with `is` / `is not`; use `isinstance()` instead of `type(...) == ...`.
+- Prefer a plain truthiness check (`if value:`) over `if value is not None:` when `None` and the other falsy values (`0`, `""`, `[]`, `{}`) should be treated the same. Reserve explicit `is not None` for when you genuinely must distinguish `None` from a valid falsy value.
 - In dict literals, use meaningful field order; put the most identifying field first.
 - If a variable assignment is immediately followed by `if`, `for`, or `with`, insert a blank line between them.
 - Do not apply that blank-line rule to every assignment.
@@ -359,6 +364,7 @@ members_to_add = (
 - Use `from __future__ import annotations` plus a `TYPE_CHECKING` guard for imports needed only at type-check time.
 - Defer circular imports to function bodies when needed; never hide circular imports with `try/except ImportError`.
 - Keep `__init__.py` boring. Export only stable public APIs, and define `__all__` only when the package API needs it.
+- Import from the defining submodule (`from foo.models import Bar`), not from a package `__init__` that re-exports it. Don't aggregate submodule symbols into `__init__` for caller convenience.
 - Avoid module-level setup that opens sockets, reads files, mutates settings, or configures logging as an import side effect.
 - Alias stdlib `timezone` as `dt_timezone` when Django's `timezone` is used in the same file.
 - Import subpackage exceptions as a namespace when using several of them.
@@ -399,6 +405,7 @@ def schedule_search_index_update(document):
 | Lifecycle hooks | `on_<event>` |
 | Task wrappers | `schedule_*` |
 | Accessors / factories | `get_*` |
+| Get-or-create helpers | `get_or_create_*` |
 | Boolean properties | `is_*` / `has_*` |
 | Test classes | `<Subject><Behavior>Tests` |
 | Test methods | `test_<what>_<condition>` |
@@ -449,6 +456,7 @@ else:
 - If removing the comment would not confuse a future reader, do not write it.
 - Use `# NOTE:` for architectural caveats.
 - Use `# FIXME:` and `# TODO:` only with a reason, optionally a ticket number.
+- Do not cite ADRs, design docs, or PR numbers in code or comments. The code stands on its own; durable rationale lives in the doc, not the source. (A `# TODO`/`# FIXME` ticket reference for transient work is the only exception.)
 - Use numbered inline step comments for sequential validation phases.
 - Methods that directly map to an external protocol may use a docstring like `"""Implements s3.PutObject"""`.
 - Use inline `->` examples in docstrings for non-obvious pure utility functions.
@@ -518,6 +526,7 @@ log.info("No dispatch slots available", active_count=active_count, limit=limit)
 - If custom exceptions are needed, define them in `exceptions.py` unless the repo has a different established pattern.
 - Use `assert` for internal preconditions and invariants, never for external input validation.
 - Use `raise X from error` for domain re-raises so the cause is preserved.
+- Do not catch an exception only to re-raise it unchanged — delete the `try/except` and let it propagate. Catch only to add context, translate to a domain error (`raise X from error`), log-and-re-raise, or actually handle it.
 - In retry loops, retain the last error and raise the final domain error from it.
 - Bare `except Exception:` is only acceptable at top-level handlers where any error becomes a failure response.
 - Use named exception tuples with a why-comment when multiple exception types are intentionally grouped.
@@ -553,6 +562,7 @@ class ApiError(Exception):
 
 ## Classes And Services
 
+- Put behavior on the class that owns the data it works on. If a free function's main argument is an object and it computes or decides something about that object, it usually wants to be a method on that object (or its manager/queryset), not a standalone function. This is the same fat-models instinct applied beyond Django.
 - Method order: constants, `__init__`, class/static methods, properties/cached properties, regular methods, private helpers.
 - Use `@cached_property` for expensive computed values.
 - Use plain `get_client()` factories for refreshable connections.

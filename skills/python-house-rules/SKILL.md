@@ -53,6 +53,7 @@ specific rule and mention the conflict briefly.
 - Minimize the time the next reader spends building a mental model.
 - Prefer clean current design over compatibility layers unless compatibility is explicitly required.
 - Abstractions earn their place by being used three times or more; before that, duplication is often cheaper than indirection.
+- Build only what the task asks for. Do not add config knobs, options, alternate code paths, or speculative resilience that were not requested — unused flexibility is complexity no one is paying for. When a "while I'm here" extension is tempting, leave it out (or raise it separately).
 - Guard clauses live at the top of functions; main logic lives in the middle.
 - Keep functions focused and side effects explicit.
 - Reuse existing project patterns before introducing new abstractions or dependencies.
