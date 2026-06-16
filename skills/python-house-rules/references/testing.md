@@ -71,12 +71,12 @@ LLMs over-produce tests that assert a program's *shape* instead of its *behavior
 - **Don't over-parametrize.** N cases that drive the *same* code path with cosmetically different data (the same lookup across 27 country pairs) add runtime, not coverage. Cover the behavior plus a representative sample; if you cap, say so.
 - **Don't pin static content.** Asserting the exact headings/sections of a rendered doc or markdown file breaks on a reword with no behavior change. Assert the one property that matters (it isn't the empty placeholder; the user value is present), not the prose.
 
-### Cull duplication, but not across distinct surfaces
+### One test per surface, even when they share code
 
-Trimming repetition is good — until it deletes real coverage that only *looks* like a duplicate.
+Similar-looking tests aren't necessarily redundant. Distinguish two cases:
 
-- **Collapse same-callable, different-input cases** into one `parametrize`/`subTest` table (a validator over many bad inputs; a status→exception mapping over many codes).
-- **Keep a separate error-path test per public method/surface**, even when they share an error helper. If a client's `get()` and `delete()` both route errors through one `_request`/`_raise_for_status`, each still needs its own timeout/5xx/transport test: the per-surface test is what proves *that* method actually goes through the shared path, and a regression in one surface is invisible to the other's tests. Different surfaces are different behaviors that happen to share code — not duplicates.
+- **Same callable, different inputs** → one `parametrize`/`subTest` table, not a test each (a validator over many bad inputs; a status→exception mapping over many codes).
+- **Distinct public methods/surfaces** → a separate error-path test each, even when they share an error helper. If a client's `get()` and `delete()` both route errors through one `_request`/`_raise_for_status`, each still gets its own timeout/5xx/transport test: it proves *that* method actually goes through the shared path, and a regression in one surface is invisible to the other's tests. Different surfaces are different behaviors that happen to share code.
 
 ## Django Test Patterns
 
