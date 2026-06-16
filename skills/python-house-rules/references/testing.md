@@ -56,6 +56,28 @@ def test_sanitization(self):
             self.assertEqual(sanitize(combination.input), combination.expected)
 ```
 
+## What Not To Test
+
+LLMs over-produce tests that assert a program's *shape* instead of its *behavior*. These pass on the current code, fire on legitimate refactors, and miss real regressions. Don't write them; flag them in review.
+
+**North-star heuristic:** if a correct *alternative* implementation would still pass the test, it tests behavior. If a correct rewrite would *fail* it, it tests shape — and shape churns. When unsure, ask "what bug does this catch that a behavioral test doesn't?"
+
+- **Don't test the language, stdlib, or framework.** No tests that a `MutableMapping` subclass supports `.get()`/`.keys()`/`.update()` (that's `collections.abc`), that an undefined route 404s (that's the router default), that the ORM stores an enum value or filters a queryset, that `urlparse`/`json`/`math` behave. Test *your* class's reason to exist (the redaction, the encryption, the custom validation), not the base it inherits.
+- **Don't mirror config in assertions.** No asserting a constant equals its own literal; no pinning field definitions (`max_length`, `on_delete.__name__`, `default`, `null`), index/constraint *names*, admin `list_display`/`list_filter`/`readonly_fields`, enum membership or counts, OpenAPI `$ref`/`required` lists, or retry/timeout policy numbers. Test the *behavior the config produces* (the delete raises `ProtectedError`; the over-limit input is rejected) — not the config.
+- **Don't write importability/surface tautologies.** `def test_x_importable(): import x` already runs at collection. No `assert SomeClass` after importing it, no asserting `__all__` contents, no walking `dir(module)` for "no extra public names."
+- **Don't read your own source as test input.** No `inspect.getsource(...)`, `Path(module).read_text()`, `ast.parse` of production code, asserting docstring/comment contents, or asserting a migration/doc file contains a string. If the property is real, exercise it by calling the code; if it's prose, it isn't a property.
+- **Don't enforce architecture with AST tests.** "Module A must not import module B" as an `ast.walk` over the tree fires on refactors and misses in-function imports. Use ruff / import-linter / review instead.
+- **Don't over-test removed/renamed things.** One generic "unknown/unsupported X is handled" test covers a deleted event, route, or method. Don't add a dedicated test pinning the specific dead name (`not hasattr(C, "old_name")`, "removed route returns 404", "legacy event is ignored").
+- **Don't over-parametrize.** N cases that drive the *same* code path with cosmetically different data (the same lookup across 27 country pairs) add runtime, not coverage. Cover the behavior plus a representative sample; if you cap, say so.
+- **Don't pin static content.** Asserting the exact headings/sections of a rendered doc or markdown file breaks on a reword with no behavior change. Assert the one property that matters (it isn't the empty placeholder; the user value is present), not the prose.
+
+### Cull duplication, but not across distinct surfaces
+
+Trimming repetition is good — until it deletes real coverage that only *looks* like a duplicate.
+
+- **Collapse same-callable, different-input cases** into one `parametrize`/`subTest` table (a validator over many bad inputs; a status→exception mapping over many codes).
+- **Keep a separate error-path test per public method/surface**, even when they share an error helper. If a client's `get()` and `delete()` both route errors through one `_request`/`_raise_for_status`, each still needs its own timeout/5xx/transport test: the per-surface test is what proves *that* method actually goes through the shared path, and a regression in one surface is invisible to the other's tests. Different surfaces are different behaviors that happen to share code — not duplicates.
+
 ## Django Test Patterns
 
 - Implement `run_commit_hooks()` on base test cases when code uses `transaction.on_commit`.

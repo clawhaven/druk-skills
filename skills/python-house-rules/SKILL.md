@@ -29,8 +29,9 @@ the task** — they hold the detailed rules and the calibration examples:
   querysets/ORM, enums, forms, admin, celery/tasks, signals, migrations & system
   checks, settings, DRF/viewsets, throttling/authz/flags, management
   commands/middleware.
-- `references/testing.md` — **writing or reviewing tests.** Testing principles and
-  Django test patterns.
+- `references/testing.md` — **writing or reviewing tests.** Testing principles,
+  what *not* to test (shape/config/tautology anti-patterns), and Django test
+  patterns.
 
 When unsure, read `python-style.md` first. For a Django change that also adds
 tests, read all three.
