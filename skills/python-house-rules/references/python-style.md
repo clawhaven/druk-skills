@@ -337,6 +337,28 @@ for part in parts:
     message += render_part(part)
 ```
 
+Require the argument; gate at the call site instead of aborting inside — a
+parameter that defaults to `None` only to `return` on the first line is a no-op
+smuggled into every caller, and it hides that the function genuinely needs the
+value:
+
+```python
+# Good
+def process(items):
+    ...  # do the work
+
+
+if items:
+    process(items)
+
+
+# Bad
+def process(items=None):
+    if items is None:
+        return
+    ...  # do the work
+```
+
 ## Formatting
 
 - Follow the repo formatter. If the repo uses Black, assume an 88-char line length.
@@ -417,6 +439,7 @@ def schedule_search_index_update(document):
 - Functions that produce a value use explicit `return <value>` at the end.
 - Guard clauses at the top use bare `return`.
 - Void functions fall off at the end.
+- Don't make a parameter optional just to abort when it's missing. If a function can't do anything without an argument, make it required and let the caller gate the call (`if arg: func(arg)`), rather than `def func(arg=None)` whose first act is `if arg is None: return`. The early-abort-on-`None` default pushes the no-op into every call site and hides the real precondition. (See the matching good/bad example below.)
 - Prefer EAFP for narrow operations where the failure mode is expected and local.
 - Prefer explicit guards for external input validation and branchy domain rules.
 - Use `try/except/else`; success-path code belongs in `else`, not after the `except`.
